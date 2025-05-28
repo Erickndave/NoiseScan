@@ -5,6 +5,7 @@ import time
 import os
 import logging
 from datetime import datetime
+from flask import Flask, render_template
 
 # Configuração básica de logging
 logging.basicConfig(
@@ -167,7 +168,7 @@ if __name__ == '__main__':
         
         app.logger.info("Iniciando servidor Flask")
         app.run(
-            host='192.168.21.30',
+            host='0.0.0.0',
             port=5000,
             debug=True,
             threaded=True,
