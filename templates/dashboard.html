@@ -1,77 +1,91 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-    <title>Monitoramento de Ruído</title>
     <meta charset="UTF-8">
+    <title>Monitoramento de Ruído</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; }
-        .chart-container { width: 100%; height: 400px; margin: 20px 0; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { padding: 10px; text-align: center; border: 1px solid #ddd; }
-        th { background-color: #f2f2f2; }
+        canvas { width: 100% !important; height: 400px !important; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Monitoramento de Níveis de Ruído</h1>
-        
-        <div class="chart-container">
+        <h1 class="display-6">Monitoramento de Níveis de Ruído</h1>
+
+        <div class="chart-container card">
+            <div class="card-header">Gráfico de Níveis</div>
             <canvas id="ruidoChart"></canvas>
         </div>
-        
-        <h2>Últimas Medições</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Nível (dB)</th>
-                    <th>Data/Hora</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for medicao in medicoes %}
-                <tr>
-                    <td>{{ medicao['id'] }}</td>
-                    <td>{{ "%.1f"|format(medicao['nivel_ruido']) }}</td>
-                    <td>{{ medicao['data_hora'] }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+        <div class="card">
+            <div class="card-header">Últimas Medições</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nível (dB)</th>
+                        <th>Data/Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for medicao in medicoes %}
+                    <tr>
+                        <td>{{ medicao['id'] }}</td>
+                        <td>{{ "%.1f"|format(medicao['nivel_ruido']) }}</td>
+                        <td>{{ medicao['data_hora'] }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <script>
-        const ctx = document.getElementById('ruidoChart').getContext('2d');
         const dados = {{ medicoes | tojson | safe }};
-        
-        new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: dados.map(m => m.data_hora),
-                datasets: [{
-                    label: 'Nível de Ruído (dB)',
-                    data: dados.map(m => m.nivel_ruido),
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderWidth: 2,
-                    tension: 0.1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: false,
-                        title: { display: true, text: 'Decibéis (dB)' }
-                    },
-                    x: {
-                        title: { display: true, text: 'Data/Hora' }
+        if (dados.length > 0) {
+            const ctx = document.getElementById('ruidoChart').getContext('2d');
+            const labels = dados.map(m => m.data_hora);
+            const niveis = dados.map(m => m.nivel_ruido);
+            const cores = niveis.map(n => n > 38 ? getComputedStyle(document.documentElement).getPropertyValue('--cor-perigo') : getComputedStyle(document.documentElement).getPropertyValue('--cor-primaria'));
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Nível de Ruído (dB)',
+                        data: niveis,
+                        backgroundColor: cores,
+                        borderColor: cores,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Decibéis (dB)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            title: {
+                                display: true,
+                                text: 'Data/Hora'
+                            }
+                        }
                     }
                 }
-            }
-        });
+            });
+        }
     </script>
 </body>
 </html>
