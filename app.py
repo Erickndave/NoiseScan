@@ -5,23 +5,19 @@ from datetime import datetime
 import logging
 import os
 
-# Configuração básica
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
-# Configuração do banco de dados
 DB_FILE = 'dados_sonoros.db'
 db_lock = Lock()
 
-# Configurações de otimização do SQLite
 SQLITE_PRAGMAS = {
     'journal_mode': 'WAL',
     'synchronous': 'NORMAL',
     'foreign_keys': 'ON'
 }
 
-# Configuração de logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',

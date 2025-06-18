@@ -2646,3 +2646,14 @@
 2025-06-18 01:27:24,065 - INFO - 127.0.0.1 - - [18/Jun/2025 01:27:24] "GET /api/ultimos-dados?t=1750220844044 HTTP/1.1" 200 -
 2025-06-18 01:27:54,069 - INFO - 127.0.0.1 - - [18/Jun/2025 01:27:54] "GET /api/ultimos-dados?t=1750220874053 HTTP/1.1" 200 -
 2025-06-18 01:27:54,080 - INFO - 127.0.0.1 - - [18/Jun/2025 01:27:54] "GET /api/ultimos-dados?t=1750220874053 HTTP/1.1" 200 -
+2025-06-18 01:28:54,066 - INFO - 127.0.0.1 - - [18/Jun/2025 01:28:54] "GET /api/ultimos-dados?t=1750220934048 HTTP/1.1" 200 -
+2025-06-18 01:28:54,075 - INFO - 127.0.0.1 - - [18/Jun/2025 01:28:54] "GET /api/ultimos-dados?t=1750220934048 HTTP/1.1" 200 -
+2025-06-18 01:29:54,065 - INFO - 127.0.0.1 - - [18/Jun/2025 01:29:54] "GET /api/ultimos-dados?t=1750220994054 HTTP/1.1" 200 -
+2025-06-18 01:29:54,073 - INFO - 127.0.0.1 - - [18/Jun/2025 01:29:54] "GET /api/ultimos-dados?t=1750220994054 HTTP/1.1" 200 -
+2025-06-18 01:30:54,192 - INFO - 127.0.0.1 - - [18/Jun/2025 01:30:54] "GET /api/ultimos-dados?t=1750221054048 HTTP/1.1" 200 -
+2025-06-18 01:30:54,228 - INFO - 127.0.0.1 - - [18/Jun/2025 01:30:54] "GET /api/ultimos-dados?t=1750221054048 HTTP/1.1" 200 -
+2025-06-18 01:31:54,541 - INFO - 127.0.0.1 - - [18/Jun/2025 01:31:54] "GET /api/ultimos-dados?t=1750221114078 HTTP/1.1" 200 -
+2025-06-18 01:32:28,828 - INFO -  * Detected change in 'c:\\Users\\Erick Coradin\\Documents\\GitHub\\NoiseScan\\app.py', reloading
+2025-06-18 01:32:29,074 - INFO -  * Restarting with stat
+2025-06-18 01:32:32,972 - WARNING -  * Debugger is active!
+2025-06-18 01:32:32,978 - INFO -  * Debugger PIN: 245-724-988
