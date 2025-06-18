@@ -41,4 +41,126 @@ th, td {
 
 th {
     background-color: #f2f2f2;
+}body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fc;
+    color: #333;
+    margin: 20px;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    color: #4e73df;
+}
+
+.card {
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.2rem 1rem rgba(0, 0, 0, 0.08);
+    margin-top: 20px;
+    padding: 20px;
+}
+
+.card-header {
+    font-weight: bold;
+    margin-bottom: 10px;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #ddd;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+canvas {
+    width: 100% !important;
+    height: 400px !important;
+}
+
+.hospital-theme {
+    background-color: #f8f9fc;
+    padding: 20px;
+}
+
+.header-hospitalar {
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+.hospital-logo {
+    height: 80px;
+}
+
+.status-card {
+    border-left: 5px solid #4e73df;
+}
+
+.info-card {
+    border-left: 5px solid #1cc88a;
+}
+
+.semaforo {
+    margin: 20px 0;
+}
+
+.circulo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2.5rem;
+    transition: all 0.3s ease;
+}
+
+.status-text {
+    font-weight: bold;
+    margin-top: 10px;
+    font-size: 1.2rem;
+}
+
+.safe-level {
+    color: #1cc88a;
+    font-weight: bold;
+}
+
+.warning-level {
+    color: #f6c23e;
+    font-weight: bold;
+}
+
+.danger-level {
+    color: #e74a3b;
+    font-weight: bold;
+}
+
+.table-responsive {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+#ruidoChart {
+    width: 100% !important;
+    height: 300px !important;
 }

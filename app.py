@@ -1,180 +1,177 @@
 from flask import Flask, request, jsonify, render_template, redirect
-from threading import Lock
 import sqlite3
-import time
-import os
-import logging
+from threading import Lock
 from datetime import datetime
-from flask import Flask, render_template
+import logging
+import os
 
-# Configuração básica de logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.StreamHandler(),
-        logging.FileHandler('app.log')
-    ]
-)
-
+# Configuração básica
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+
+# Configuração do banco de dados
 DB_FILE = 'dados_sonoros.db'
 db_lock = Lock()
 
-# Configurações otimizadas para SQLite
+# Configurações de otimização do SQLite
 SQLITE_PRAGMAS = {
     'journal_mode': 'WAL',
     'synchronous': 'NORMAL',
-    'busy_timeout': 30000,
     'foreign_keys': 'ON'
 }
 
+# Configuração de logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+
 def init_db():
-    """Inicializa o banco de dados com tabelas e configurações"""
+    """Inicializa o banco de dados com a estrutura necessária"""
     try:
         with db_lock:
             conn = sqlite3.connect(DB_FILE)
-            try:
-                for pragma, value in SQLITE_PRAGMAS.items():
-                    conn.execute(f"PRAGMA {pragma}={value}")
-                
-                conn.execute('''
-                    CREATE TABLE IF NOT EXISTS medicoes (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        nivel_ruido REAL NOT NULL,
-                        data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                ''')
-                conn.commit()
-                app.logger.info("Banco de dados inicializado com sucesso")
-            except sqlite3.Error as e:
-                app.logger.error(f"Erro ao criar tabelas: {str(e)}")
-                raise
-            finally:
-                conn.close()
-    except Exception as e:
-        app.logger.critical(f"Falha crítica na inicialização do DB: {str(e)}")
-        raise
-
-def get_db_connection():
-    """Obtém conexão com o banco de dados com tratamento de erros"""
-    attempts = 0
-    last_error = None
-    
-    while attempts < 3:
-        try:
-            conn = sqlite3.connect(DB_FILE, timeout=30)
-            conn.row_factory = sqlite3.Row
             for pragma, value in SQLITE_PRAGMAS.items():
                 conn.execute(f"PRAGMA {pragma}={value}")
-            return conn
-        except sqlite3.Error as e:
-            last_error = e
-            app.logger.warning(f"Tentativa {attempts+1} de conexão falhou: {str(e)}")
-            time.sleep(1)
-            attempts += 1
-    
-    app.logger.error("Falha ao conectar ao banco de dados após 3 tentativas")
-    raise Exception(f"Não foi possível conectar ao banco: {str(last_error)}")
+            
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS medicoes (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nivel_ruido REAL NOT NULL,
+                    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            conn.commit()
+            logging.info("Banco de dados inicializado com sucesso")
+    except Exception as e:
+        logging.error(f"Falha na inicialização do banco: {str(e)}")
+        raise
+    finally:
+        conn.close()
+
+def get_db_connection():
+    """Obtém uma conexão com o banco de dados"""
+    conn = None
+    try:
+        conn = sqlite3.connect(DB_FILE, timeout=30)
+        conn.row_factory = sqlite3.Row
+        for pragma, value in SQLITE_PRAGMAS.items():
+            conn.execute(f"PRAGMA {pragma}={value}")
+        return conn
+    except sqlite3.Error as e:
+        logging.error(f"Erro ao conectar ao banco: {str(e)}")
+        if conn:
+            conn.close()
+        raise
 
 @app.route('/')
 def home():
     """Rota principal que redireciona para o dashboard"""
-    app.logger.debug("Acesso à rota raiz, redirecionando para /dashboard")
     return redirect('/dashboard')
 
 @app.route('/api/dados', methods=['POST'])
 def receber_dados():
     """Endpoint para receber dados do ESP32"""
-    app.logger.debug(f"Requisição recebida: {request.data}")
-    
-    if not request.is_json:
-        app.logger.warning("Requisição sem Content-Type application/json")
-        return jsonify({"erro": "Content-Type deve ser application/json"}), 415
-
     try:
-        data = request.get_json()
-        if 'nivel_ruido' not in data:
-            app.logger.warning("Campo 'nivel_ruido' faltando no JSON")
-            return jsonify({"erro": "Campo 'nivel_ruido' obrigatório"}), 400
+        if not request.is_json:
+            return jsonify({"error": "Content-Type deve ser application/json"}), 415
             
-        nivel_ruido = float(data['nivel_ruido'])
-        app.logger.info(f"Dado recebido: {nivel_ruido} dB")
+        data = request.get_json()
+        nivel_ruido = float(data.get('nivel_ruido', 0))
+        
+        if not 0 <= nivel_ruido <= 130:
+            return jsonify({"error": "Valor de dB deve estar entre 0 e 130"}), 400
         
         with db_lock:
             conn = get_db_connection()
-            try:
-                conn.execute(
-                    "INSERT INTO medicoes (nivel_ruido) VALUES (?)",
-                    (nivel_ruido,)
-                )
-                conn.commit()
-                app.logger.debug("Dado armazenado no banco com sucesso")
-                return jsonify({
-                    "status": "success",
-                    "message": f"Dado {nivel_ruido} dB recebido",
-                    "timestamp": datetime.now().isoformat()
-                }), 200
-            finally:
-                conn.close()
-                
-    except ValueError as e:
-        app.logger.error(f"Erro de valor: {str(e)}")
-        return jsonify({"erro": "Valor de nível de ruído inválido"}), 400
+            conn.execute(
+                "INSERT INTO medicoes (nivel_ruido) VALUES (?)",
+                (round(nivel_ruido, 2),)
+            )
+            conn.commit()
+        
+        return jsonify({"status": "success"}), 200
     except Exception as e:
-        app.logger.error(f"Erro inesperado: {str(e)}")
-        return jsonify({"erro": "Falha no processamento"}), 500
+        logging.error(f"Erro em /api/dados: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if 'conn' in locals():
+            conn.close()
+
+@app.route('/api/ultimos-dados', methods=['GET'])
+def get_ultimos_dados():
+    """Endpoint para fornecer dados ao dashboard"""
+    try:
+        with db_lock:
+            conn = get_db_connection()
+            cursor = conn.execute('''
+                SELECT 
+                    nivel_ruido,
+                    strftime('%Y-%m-%d %H:%M:%S', data_hora) as data_hora
+                FROM medicoes
+                ORDER BY data_hora DESC
+                LIMIT 15
+            ''')
+            dados = [dict(row) for row in cursor.fetchall()]
+            dados.reverse()  # Ordem cronológica para o gráfico
+            
+            return jsonify({
+                "status": "success",
+                "data": dados
+            }), 200
+    except Exception as e:
+        logging.error(f"Erro em /api/ultimos-dados: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 @app.route('/dashboard')
 def dashboard():
-    """Rota do dashboard de monitoramento"""
+    """Rota do dashboard principal"""
     try:
         with db_lock:
             conn = get_db_connection()
-            try:
-                cursor = conn.execute('''
-                    SELECT 
-                        id,
-                        nivel_ruido,
-                        strftime('%d/%m/%Y %H:%M:%S', data_hora) as data_hora
-                    FROM medicoes
-                    ORDER BY data_hora DESC
-                    LIMIT 20
-                ''')
-                medicoes = [dict(row) for row in cursor.fetchall()]
-                app.logger.debug(f"Retornando {len(medicoes)} medições para o dashboard")
-                return render_template('dashboard.html', medicoes=medicoes)
-            finally:
-                conn.close()
+            cursor = conn.execute('''
+                SELECT 
+                    id,
+                    nivel_ruido,
+                    strftime('%d/%m/%Y %H:%M:%S', data_hora) as data_hora
+                FROM medicoes
+                ORDER BY data_hora DESC
+                LIMIT 20
+            ''')
+            medicoes = [dict(row) for row in cursor.fetchall()]
+        
+        return render_template('dashboard.html', medicoes=medicoes)
     except Exception as e:
-        app.logger.critical(f"Erro no dashboard: {str(e)}")
-        return f"Erro no banco de dados: {str(e)}", 500
+        logging.error(f"Erro no dashboard: {str(e)}")
+        return render_template('error.html', error=str(e)), 500
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 @app.after_request
-def log_requests(response):
-    """Middleware para log de todas as requisições"""
-    app.logger.info(
-        f"{request.remote_addr} {request.method} {request.path} "
-        f"{response.status_code} {response.content_length}bytes"
-    )
+def add_security_headers(response):
+    """Adiciona headers de segurança"""
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
     return response
 
 if __name__ == '__main__':
-    try:
-        if not os.path.exists(DB_FILE):
-            app.logger.info("Inicializando banco de dados pela primeira vez")
-            init_db()
-        
-        app.logger.info("Iniciando servidor Flask")
-        app.run(
-            host='0.0.0.0',
-            port=5000,
-            debug=True,
-            threaded=True,
-            use_reloader=False,
-            passthrough_errors=True
-        )
-    except Exception as e:
-        app.logger.critical(f"Falha na inicialização: {str(e)}")
-        raise
+    # Verifica se o banco de dados existe ou precisa ser criado
+    if not os.path.exists(DB_FILE):
+        init_db()
+    
+    # Configuração do servidor
+    app.run(
+        host='0.0.0.0',
+        port=5000,
+        debug=True,
+        threaded=True
+    )
